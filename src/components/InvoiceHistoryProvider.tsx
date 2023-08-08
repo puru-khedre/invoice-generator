@@ -27,6 +27,7 @@ type TInvoiceHistory = {
   currentInvoice: TInvoice;
   changeCurrentInvoice: (ind: number) => void;
   addInvoiceToHistory: (invoice: TInvoice) => void;
+  createNewInvoice: () => void;
 };
 
 const emptyInvoice: TInvoice = {
@@ -37,7 +38,14 @@ const emptyInvoice: TInvoice = {
     due_date: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
     payment_terms: "",
   },
-  items: [],
+  items: [
+    {
+      name: "Item 1",
+      quantity: 12,
+      rate: 12,
+      total_amt: 144,
+    },
+  ],
   footerData: {
     tax: "",
     discount: "",
@@ -60,6 +68,7 @@ const initialState: TInvoiceHistory = {
   currentInvoice: emptyInvoice,
   changeCurrentInvoice: () => {},
   addInvoiceToHistory: () => {},
+  createNewInvoice: () => {},
 };
 
 const InvoiceHistoryContext = createContext<TInvoiceHistory>(initialState);
@@ -68,31 +77,9 @@ const InvoiceHistoryContext = createContext<TInvoiceHistory>(initialState);
 export const useInvoiceHistory = () => useContext(InvoiceHistoryContext);
 
 const InvoiceHistoryProvider = ({ children }: { children: ReactNode }) => {
-  const [currentInvoice, setCurrentInvoice] = useState<TInvoice>({
-    headerData: {
-      invoice_number: "",
-      bill_to: "",
-      date: new Date(),
-      due_date: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
-      payment_terms: "",
-    },
-    items: [],
-    footerData: {
-      tax: "",
-      discount: "",
-      shipping: "",
-      paid: "0",
-    },
-    amounts: {
-      sub_total: 0,
-      discount_amt: 0,
-      tax_amt: 0,
-      total: 0,
-      due_amt: 0,
-    },
-  });
+  const [currentInvoice, setCurrentInvoice] = useState<TInvoice>(emptyInvoice);
   const [invoiceList, setInvoiceList] = useState<TInvoice[]>([]);
-  const [invoiceCount, setInvoiceCount] = useState(0);
+  const [, setInvoiceCount] = useState(0);
 
   useEffect(() => {
     const count: number = JSON.parse(
@@ -103,47 +90,92 @@ const InvoiceHistoryProvider = ({ children }: { children: ReactNode }) => {
       localStorage.getItem("invoice:list") || "[]"
     ) as TInvoice[];
 
-    console.log({ currentInvoice, count, history });
     setInvoiceList(history);
     setInvoiceCount(count);
 
+    const iNo =
+      history.reduce(
+        (r, i) =>
+          +i.headerData.invoice_number > r ? +i.headerData.invoice_number : r,
+        0
+      ) + 1;
+
+    setCurrentInvoice((prev) => ({
+      ...prev,
+      headerData: { ...prev.headerData, invoice_number: iNo },
+    }));
+
     if (history.at(-1)) {
-      console.log("if");
-      setCurrentInvoice(history.at(-1));
-    } else console.log("else");
+      console.log({ iNo });
 
-    // else {
-    //   // setCurrentInvoice();
-    //   console.log("sff");
-    // }
-
-    return () => {
-      // localStorage.setItem("invoice:list", JSON.stringify(invoiceList));
-      // localStorage.setItem("invoice:count", `${invoiceCount}`);
-    };
+      // const i = history.at(-1);
+      // if (i) {
+      //   i.headerData.invoice_number = iNo;
+      //   setCurrentInvoice(i);
+      // }
+    }
   }, []);
 
   const changeCurrentInvoice = (ind: number) => {
-    const history = JSON.parse(
-      localStorage.getItem("invoice:list") || "[]"
-    ) as TInvoice[];
-
-    console.log({ history, ind });
-
-    // if (ind <= history.length) setCurrentInvoice(history.at(ind));
+    setCurrentInvoice(invoiceList[ind]);
   };
 
+  const createNewInvoice = () => {
+    const iNo =
+      invoiceList.reduce(
+        (r, i) =>
+          +i.headerData.invoice_number > r ? +i.headerData.invoice_number : r,
+        0
+      ) + 1;
+
+    setCurrentInvoice({
+      ...emptyInvoice,
+      headerData: { ...emptyInvoice.headerData, invoice_number: iNo },
+    });
+  };
   const addInvoiceToHistory = (invoice: TInvoice) => {
-    setInvoiceList((prev) => [...prev, invoice]);
+    let isInEdit = false;
+    invoiceList.forEach((value, i) => {
+      if (
+        +value.headerData.invoice_number === +invoice.headerData.invoice_number
+      ) {
+        setInvoiceList((prev) => {
+          prev[i] = value;
+          localStorage.setItem("invoice:list", JSON.stringify(prev));
+          return prev;
+        });
+        isInEdit = true;
+      }
+    });
+
+    if (isInEdit == false) {
+      setInvoiceList((prev) => {
+        const newList = [...prev, invoice];
+
+        localStorage.setItem("invoice:list", JSON.stringify(newList));
+        return newList;
+      });
+
+      console.log({ items: emptyInvoice.items });
+      setCurrentInvoice({
+        ...emptyInvoice,
+        headerData: {
+          ...emptyInvoice.headerData,
+          invoice_number: +invoice.headerData.invoice_number + 1,
+        },
+      });
+    }
   };
 
   return (
     <InvoiceHistoryContext.Provider
       value={{
         ...initialState,
+        invoices: invoiceList,
         addInvoiceToHistory,
         changeCurrentInvoice,
         currentInvoice,
+        createNewInvoice,
       }}
     >
       {children}

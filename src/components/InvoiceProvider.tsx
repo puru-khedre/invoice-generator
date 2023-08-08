@@ -4,6 +4,7 @@ import {
   RefObject,
   createRef,
   useContext,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -110,15 +111,15 @@ const InvoiceDataContext = createContext<TInvoiceDataContext>(initialState);
 export const useInvoice = () => useContext(InvoiceDataContext);
 
 const InvoiceProvider: FC<ProviderProps> = ({ children }) => {
+  const { currentInvoice } = useInvoiceHistory();
+
   // *  ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ =========== HEADER PART ==========  ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
 
-  const [headerData, setHeaderData] = useState<TInvoiceHeader>({
-    invoice_number: "",
-    bill_to: "Purushottam Khedre",
-    date: new Date(),
-    due_date: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
-    payment_terms: "",
-  });
+  const [headerData, setHeaderData] = useState<TInvoiceHeader>(
+    currentInvoice.headerData
+  );
+
+  useEffect(() => setHeaderData(currentInvoice.headerData), [currentInvoice]);
 
   const setHeader = (cb: (prev: TInvoiceHeader) => TInvoiceHeader) => {
     setHeaderData(cb);
@@ -126,7 +127,11 @@ const InvoiceProvider: FC<ProviderProps> = ({ children }) => {
   // * ↑ ↑ ↑ ↑ ↑ ↑ ↑ ============  HEADER PART   ============ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑
 
   // *  ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ =========== ITEMS LIST PART ==========  ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
-  const [itemsList, setItemsList] = useState<TInvoiceItem[]>([]);
+  const [itemsList, setItemsList] = useState<TInvoiceItem[]>(
+    currentInvoice.items
+  );
+
+  useEffect(() => setItemsList(currentInvoice.items), [currentInvoice]);
 
   const addItems = (item: TInvoiceItem) => {
     setItemsList((list) => [...list, item]);
@@ -148,8 +153,11 @@ const InvoiceProvider: FC<ProviderProps> = ({ children }) => {
   // *  ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ =========== FOOTER DATA PART ==========  ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
 
   const [footerData, setFooterData] = useState<TInvoiceFooter>(
-    initialState.footerData
+    currentInvoice.footerData
   );
+
+  useEffect(() => setFooterData(currentInvoice.footerData), [currentInvoice]);
+
   const { discount, paid, shipping, tax } = footerData;
 
   const setFooter = (cb: (prev: TInvoiceFooter) => TInvoiceFooter) => {

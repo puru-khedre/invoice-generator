@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { AddItemDialog } from "./AddItemDialog";
 import { useInvoice } from "./InvoiceProvider";
+import { formatCurrency } from "@/lib/utils";
 
 interface InvoiceItemsListProps {}
 
@@ -42,10 +43,10 @@ const InvoiceItemsList: FC<InvoiceItemsListProps> = () => {
                   <TableCell className="font-medium">{item.name}</TableCell>
                   <TableCell className="text-center">{item.quantity}</TableCell>
                   <TableCell className="text-center">
-                    {item.rate} &#x20B9;
+                    {formatCurrency(+item.rate)}
                   </TableCell>
                   <TableCell className="text-center">
-                    {item.total_amt} &#x20B9;
+                    {formatCurrency(item.total_amt ?? 0)}
                   </TableCell>
                 </TableRow>
               ))}

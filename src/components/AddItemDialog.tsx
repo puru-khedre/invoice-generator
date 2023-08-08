@@ -32,10 +32,8 @@ export function AddItemDialog() {
   };
 
   const onSubmit = () => {
-    console.log(item);
     // return;
     const { name, quantity, rate } = item;
-    console.log(name.length, quantity === "", rate === "");
     if (name.length === 0 || quantity === "" || rate === "") setErr("Error");
     else {
       item.total_amt = +quantity * +rate;

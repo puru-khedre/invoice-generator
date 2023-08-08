@@ -1,39 +1,26 @@
-import { useReactToPrint } from "react-to-print";
 import "./App.css";
-import InvoiceFooter from "./components/InvoiceFooter";
-import InvoiceHeader from "./components/InvoiceHeader";
-import InvoiceItemsList from "./components/InvoiceItemsList";
-import InvoiceProvider, { useInvoice } from "./components/InvoiceProvider";
-import { Button } from "./components/ui/button";
+import InvoiceForm from "./components/InvoiceForm";
+import InvoiceHistory from "./components/InvoiceHistory";
 import InvoiceHistoryProvider from "./components/InvoiceHistoryProvider";
+import InvoiceProvider from "./components/InvoiceProvider";
 
 function App() {
-  const { printRef } = useInvoice();
-
-  const handlePrint = useReactToPrint({
-    content() {
-      return printRef.current;
-    },
-  });
   return (
-    <InvoiceHistoryProvider>
-      <InvoiceProvider>
-        <div className="flex flex-row gap-4 m-4">
-          <div className="border border-purple-400 rounded-lg divide-y-2 grow-1 p-4">
-            <div ref={printRef} className="print:p-10">
-              <InvoiceHeader />
-              <InvoiceItemsList />
-              <InvoiceFooter
-                printBtn={<Button onClick={handlePrint}>Print</Button>}
-              />
+    <>
+      <InvoiceHistoryProvider>
+        <InvoiceProvider>
+          <div className="flex flex-row gap-4 m-4">
+            <div className="border-2 border-purple-400 rounded-lg divide-y-2 grow-1 p-4 h-max">
+              <InvoiceForm />
+            </div>
+            <div className="w-1/3 border-2 border-red-400 rounded-lg p-4 h-max">
+              <h2 className="font-medium text-3xl">Invoice History</h2>
+              <InvoiceHistory />
             </div>
           </div>
-          <div className="w-1/3 border border-red-500/40 rounded-lg p-4">
-            pk
-          </div>
-        </div>
-      </InvoiceProvider>
-    </InvoiceHistoryProvider>
+        </InvoiceProvider>
+      </InvoiceHistoryProvider>
+    </>
   );
 }
 

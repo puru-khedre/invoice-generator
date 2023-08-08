@@ -1,29 +1,33 @@
-import { ChangeEvent, FC, ReactNode, useState } from "react";
+import { ChangeEvent, FC, useState } from "react";
 import { Input } from "./ui/input";
 import LabeledInput from "./LabeledInput";
 import { IndianRupee, Percent, Plus } from "lucide-react";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
 import { useInvoice } from "./InvoiceProvider";
-import { useInvoiceHistory } from "./InvoiceHistoryProvider";
+import { formatCurrency } from "@/lib/utils";
+import { useReactToPrint } from "react-to-print";
 
-interface InvoiceFooterProps {
-  printBtn: ReactNode;
-}
-const InvoiceFooter: FC<InvoiceFooterProps> = ({ printBtn }) => {
+interface InvoiceFooterProps {}
+const InvoiceFooter: FC<InvoiceFooterProps> = () => {
   const [isDiscount, setIsDiscount] = useState<boolean>(false);
   const [isShipping, setIsShipping] = useState<boolean>(false);
-  // const [tax, setTax] = useState<string | number>("");
-  // const [discount, setDiscount] = useState<string | number>("");
-  // const [shipping, setshipping] = useState<string | number>("");
-  // const [paid, setPaid] = useState<string | number>("0");
 
   const {
     footerData: { tax, discount, shipping, paid },
     setFooter,
     amounts: { sub_total, discount_amt, tax_amt, due_amt, total },
     saveToHistory,
+    printRef,
   } = useInvoice();
+
+  const handlePrint = useReactToPrint({
+    content() {
+      return printRef.current;
+    },
+  });
+
+  console.log();
 
   const handleChange = ({
     target: { name, value },
@@ -33,47 +37,52 @@ const InvoiceFooter: FC<InvoiceFooterProps> = ({ printBtn }) => {
 
   return (
     <div className="w-full grid grid-cols-2">
-      <div>
-        <div className="print:hidden">{printBtn}</div>
-        <Button onClick={saveToHistory}>Save</Button>
+      <div className="print:hidden">
+        <span className="mr-2">
+          <Button onClick={handlePrint}>Print</Button>
+        </span>
+        <Button onClick={saveToHistory} variant={"outline"}>
+          Save
+        </Button>
       </div>
+      <div className="hidden print:block"></div>
 
       <div className="ml-auto space-y-2 flex flex-col items-end">
         <div className="hidden print:grid grid-cols-[3fr_3fr] gap-2 items-center place-items-end mr-2">
           <>
             <span>Sub Total: </span>
-            <p className="font-medium">{sub_total.toFixed(2)} &#x20B9;</p>
+            <p className="font-medium">{formatCurrency(sub_total)}</p>
           </>
           {isDiscount && (
             <>
               <span>Discount ({discount}%): </span>
-              <p className="font-medium">{discount_amt.toFixed(2)} &#x20B9;</p>
+              <p className="font-medium">{formatCurrency(discount_amt)}</p>
             </>
           )}
           <>
             <span>Tax ({tax}%): </span>
-            <p className="font-medium">{tax_amt.toFixed(2)} &#x20B9;</p>
+            <p className="font-medium">{formatCurrency(tax_amt)}</p>
           </>
           {isShipping && (
             <>
               <span>Shipping cost: </span>
-              <p className="font-medium">{(+shipping).toFixed(2)} &#x20B9;</p>
+              <p className="font-medium">{formatCurrency(+shipping)}</p>
             </>
           )}
           <>
             <span>Total: </span>
-            <p className="font-medium">{total.toFixed(2)} &#x20B9;</p>
+            <p className="font-medium">{formatCurrency(total)}</p>
           </>
           <>
             <span>Amount Paid: </span>
-            <p className="font-medium">{(+paid).toFixed(2)} &#x20B9;</p>
+            <p className="font-medium">{formatCurrency(+paid)}</p>
           </>
         </div>
 
         <div className="grid grid-cols-[1fr_3fr] gap-2 items-center print:hidden">
           <>
             <strong>Sub total:</strong>
-            <p>{sub_total} &#x20B9;</p>
+            <p>{formatCurrency(sub_total)}</p>
           </>
 
           {isDiscount && (
@@ -93,7 +102,7 @@ const InvoiceFooter: FC<InvoiceFooterProps> = ({ printBtn }) => {
           )}
 
           <>
-            <Label htmlFor="tax">Tax percentage</Label>
+            <Label htmlFor="tax">Tax %</Label>
             <LabeledInput Icon={Percent} labelFor="tax">
               <Input
                 className="rounded-r-none"
@@ -153,7 +162,7 @@ const InvoiceFooter: FC<InvoiceFooterProps> = ({ printBtn }) => {
 
           <>
             <strong>Total: </strong>
-            <p>{total} &#x20B9;</p>
+            <p>{formatCurrency(total)}</p>
           </>
 
           <>
@@ -177,7 +186,7 @@ const InvoiceFooter: FC<InvoiceFooterProps> = ({ printBtn }) => {
 
           <>
             <strong>Balance Due: </strong>
-            <p>{due_amt.toFixed(2)} &#x20B9;</p>
+            <p>{formatCurrency(due_amt)}</p>
           </>
         </div>
       </div>

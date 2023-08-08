@@ -3,7 +3,7 @@ import { Input } from "./ui/input";
 import { HashIcon } from "lucide-react";
 import LabeledInput from "./LabeledInput";
 import { useInvoice } from "./InvoiceProvider";
-import { formatDateToInputStyle } from "@/lib/utils";
+import { formatCurrency, formatDateToInputStyle } from "@/lib/utils";
 
 const InvoiceHeader = () => {
   const {
@@ -29,6 +29,13 @@ const InvoiceHeader = () => {
         <div>
           <img src="/Ep_Logo.png" className="w-36" />
           <h2 className="font-bold text-4xl">EverPeak IT Solution</h2>
+          <address>
+            123 Temporary Street, Suite 456, Temporaryville, TX 12345, United
+            States
+          </address>
+          <div className="mt-2">
+            <strong>GST:</strong> 12423423535354646
+          </div>
         </div>
 
         <div className="w-full flex flex-row justify-stretch items-center gap-2">
@@ -60,7 +67,7 @@ const InvoiceHeader = () => {
                 className="mt-2"
                 placeholder="(optional)"
                 id="ship_to"
-                value={headerData.ship_to}
+                value={headerData.ship_to || ""}
                 onChange={handleChange}
                 name="ship_to"
               />
@@ -107,18 +114,20 @@ const InvoiceHeader = () => {
         <div className="space-y-2 w-full hidden print:block">
           <div className="">
             <span>Date: </span>
-            {headerData.date?.toLocaleDateString(undefined)}
+            {new Date(headerData.date ?? new Date()).toLocaleDateString(
+              undefined
+            )}
           </div>
           <div className="">
             <span>Due date: </span>
-            {headerData.due_date?.toLocaleDateString(undefined)}
+            {new Date(headerData.due_date).toLocaleDateString(undefined)}
           </div>
           <div className={!headerData.payment_terms ? "hidden" : ""}>
             <span>Payment terms: </span>
             {headerData.payment_terms}
           </div>
           <div className="bg-gray-100 font-semibold text-2xl p-1">
-            <h3>Balance Due: {due_amt.toFixed(2)} &#x20B9;</h3>
+            <h3>Balance Due: {formatCurrency(due_amt)}</h3>
           </div>
         </div>
 
