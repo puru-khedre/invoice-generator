@@ -1,4 +1,23 @@
-# React + TypeScript + Vite
+# Invoice generator (React + TypeScript + Vite)
+
+## Project setup
+To setup this project `NodeJS` and `npm` is required
+Installing all dependencies
+```bash
+npm install
+```
+
+Running development server
+```bash
+npm run dev
+```
+Building project
+```bash
+npm run build
+```
+The project build is in dist folder
+
+---
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
