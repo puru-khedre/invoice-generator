@@ -24,6 +24,9 @@ type TInvoiceHistory = {
   invoices: TInvoice[];
   invoice_count: number;
 
+  currency: string;
+  setCurrency: (val: string) => void;
+
   currentInvoice: TInvoice;
   changeCurrentInvoice: (ind: number) => void;
   addInvoiceToHistory: (invoice: TInvoice) => void;
@@ -33,37 +36,38 @@ type TInvoiceHistory = {
 const emptyInvoice: TInvoice = {
   headerData: {
     invoice_number: "",
+    format_invoice_number: "",
     bill_to: "",
+    bill_to_addr: "",
     date: new Date(),
     due_date: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
     payment_terms: "",
   },
-  items: [
-    {
-      name: "Item 1",
-      quantity: 12,
-      rate: 12,
-      total_amt: 144,
-    },
-  ],
+  items: [],
   footerData: {
-    tax: "",
+    other_taxes: "",
     discount: "",
     shipping: "",
-    paid: "0",
+    paid: "",
+    terms: "",
   },
   amounts: {
     sub_total: 0,
     discount_amt: 0,
-    tax_amt: 0,
+    other_taxes_amt: 0,
+    gst_amt: 0,
     total: 0,
     due_amt: 0,
   },
+  currency: "USD",
 };
 
 const initialState: TInvoiceHistory = {
   invoices: [],
   invoice_count: 0,
+
+  currency: "USD",
+  setCurrency: () => {},
 
   currentInvoice: emptyInvoice,
   changeCurrentInvoice: () => {},
@@ -80,6 +84,7 @@ const InvoiceHistoryProvider = ({ children }: { children: ReactNode }) => {
   const [currentInvoice, setCurrentInvoice] = useState<TInvoice>(emptyInvoice);
   const [invoiceList, setInvoiceList] = useState<TInvoice[]>([]);
   const [, setInvoiceCount] = useState(0);
+  const [currency, setCurrency] = useState(initialState.currency);
 
   useEffect(() => {
     const count: number = JSON.parse(
@@ -133,6 +138,7 @@ const InvoiceHistoryProvider = ({ children }: { children: ReactNode }) => {
       headerData: { ...emptyInvoice.headerData, invoice_number: iNo },
     });
   };
+
   const addInvoiceToHistory = (invoice: TInvoice) => {
     let isInEdit = false;
     invoiceList.forEach((value, i) => {
@@ -176,6 +182,8 @@ const InvoiceHistoryProvider = ({ children }: { children: ReactNode }) => {
         changeCurrentInvoice,
         currentInvoice,
         createNewInvoice,
+        currency,
+        setCurrency: (val: string) => setCurrency(val),
       }}
     >
       {children}

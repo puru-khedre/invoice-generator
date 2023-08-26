@@ -5,6 +5,7 @@ import {
   createRef,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -18,11 +19,14 @@ import { useInvoiceHistory } from "./InvoiceHistoryProvider";
 
 export type TInvoiceHeader = {
   invoice_number: number | string;
+  format_invoice_number: string;
   date?: Date;
   due_date: Date;
   payment_terms?: string;
   bill_to: string;
+  bill_to_addr: string;
   ship_to?: string;
+  ship_to_addr?: string;
 };
 
 export type TInvoiceItem = {
@@ -33,16 +37,18 @@ export type TInvoiceItem = {
 };
 
 export type TInvoiceFooter = {
-  tax: string | number;
+  other_taxes: string | number;
   discount: string | number;
   shipping: string | number;
   paid: string | number;
+  terms: string;
 };
 
 export type TAmounts = {
   sub_total: number;
   discount_amt: number;
-  tax_amt: number;
+  other_taxes_amt: number;
+  gst_amt: number;
   total: number;
   due_amt: number;
 };
@@ -52,6 +58,7 @@ export type TInvoice = {
   items: TInvoiceItem[];
   footerData: TInvoiceFooter;
   amounts: TAmounts;
+  currency: string;
 };
 
 type TInvoiceDataContext = TInvoice & {
@@ -66,31 +73,37 @@ type TInvoiceDataContext = TInvoice & {
   dueAmt: string | number;
   setDueAmt: (amt: string | number) => void;
   saveToHistory: () => void;
+  formatInvoiceNumber: (num: number | string) => string;
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const initialState: TInvoiceDataContext = {
   headerData: {
     invoice_number: "",
+    format_invoice_number: "",
     bill_to: "",
+    bill_to_addr: "",
     date: new Date(),
     due_date: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
     payment_terms: "",
   },
   items: [],
   footerData: {
-    tax: "",
+    other_taxes: "",
     discount: "",
     shipping: "",
     paid: "0",
+    terms: "",
   },
   amounts: {
     sub_total: 0,
     discount_amt: 0,
-    tax_amt: 0,
+    other_taxes_amt: 0,
+    gst_amt: 0,
     total: 0,
     due_amt: 0,
   },
+  currency: "USD",
 
   setHeader: () => {},
   setFooter: () => {},
@@ -103,6 +116,7 @@ export const initialState: TInvoiceDataContext = {
   dueAmt: "0",
   setDueAmt: () => {},
   saveToHistory: () => {},
+  formatInvoiceNumber: (num) => "" + num,
 };
 
 const InvoiceDataContext = createContext<TInvoiceDataContext>(initialState);
@@ -111,7 +125,18 @@ const InvoiceDataContext = createContext<TInvoiceDataContext>(initialState);
 export const useInvoice = () => useContext(InvoiceDataContext);
 
 const InvoiceProvider: FC<ProviderProps> = ({ children }) => {
-  const { currentInvoice } = useInvoiceHistory();
+  const { currentInvoice, currency: cCurrency } = useInvoiceHistory();
+
+  const formatInvoiceNumber = useMemo(() => {
+    const date = new Date();
+
+    let month: string | number = date.getMonth() + 1;
+    month = month < 10 ? "0" + month : "" + month;
+
+    const year = date.getFullYear();
+
+    return (num: number | string) => `#0${num}-${month}${year}`;
+  }, []);
 
   // *  ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ =========== HEADER PART ==========  ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
 
@@ -119,11 +144,21 @@ const InvoiceProvider: FC<ProviderProps> = ({ children }) => {
     currentInvoice.headerData
   );
 
-  useEffect(() => setHeaderData(currentInvoice.headerData), [currentInvoice]);
+  useEffect(
+    () =>
+      setHeaderData({
+        ...currentInvoice.headerData,
+        format_invoice_number: formatInvoiceNumber(
+          currentInvoice.headerData.invoice_number
+        ),
+      }),
+    [currentInvoice, formatInvoiceNumber]
+  );
 
   const setHeader = (cb: (prev: TInvoiceHeader) => TInvoiceHeader) => {
     setHeaderData(cb);
   };
+
   // * ↑ ↑ ↑ ↑ ↑ ↑ ↑ ============  HEADER PART   ============ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑
 
   // *  ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ =========== ITEMS LIST PART ==========  ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
@@ -158,7 +193,7 @@ const InvoiceProvider: FC<ProviderProps> = ({ children }) => {
 
   useEffect(() => setFooterData(currentInvoice.footerData), [currentInvoice]);
 
-  const { discount, paid, shipping, tax } = footerData;
+  const { discount, paid, shipping, other_taxes } = footerData;
 
   const setFooter = (cb: (prev: TInvoiceFooter) => TInvoiceFooter) => {
     setFooterData(cb);
@@ -174,18 +209,23 @@ const InvoiceProvider: FC<ProviderProps> = ({ children }) => {
       ? (+discount * sub_total) / 100
       : 0;
 
-  const tax_amt =
-    typeof tax == "number" && tax != 0
-      ? (+tax * (sub_total - discount_amt)) / 100
+  const other_taxes_amt =
+    typeof other_taxes == "number" && other_taxes != 0
+      ? (+other_taxes * (sub_total - discount_amt)) / 100
       : 0;
 
-  const total = tax_amt + (sub_total - discount_amt) + +shipping;
+  const gst_amt =
+    ((cCurrency === "INR" ? 18 : 0) * (sub_total - discount_amt)) / 100;
+
+  const total =
+    gst_amt + other_taxes_amt + (sub_total - discount_amt) + +shipping;
   const due_amt = total - +paid;
 
   const amounts: TAmounts = {
     sub_total,
     discount_amt,
-    tax_amt,
+    other_taxes_amt,
+    gst_amt,
     total,
     due_amt,
   };
@@ -199,8 +239,17 @@ const InvoiceProvider: FC<ProviderProps> = ({ children }) => {
   const { addInvoiceToHistory } = useInvoiceHistory();
 
   const saveToHistory = () => {
-    addInvoiceToHistory({ amounts, footerData, headerData, items: itemsList });
+    addInvoiceToHistory({
+      amounts,
+      footerData,
+      headerData,
+      items: itemsList,
+      currency,
+    });
   };
+
+  const [currency, setCurrency] = useState(cCurrency);
+  useEffect(() => setCurrency(cCurrency), [cCurrency]);
 
   return (
     <InvoiceDataContext.Provider
@@ -215,7 +264,9 @@ const InvoiceProvider: FC<ProviderProps> = ({ children }) => {
         printRef,
         dueAmt,
         setDueAmt: (amt) => setDueAmt(amt),
+        formatInvoiceNumber,
         saveToHistory,
+        currency,
       }}
     >
       {children}

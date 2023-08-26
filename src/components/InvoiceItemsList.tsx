@@ -11,11 +11,15 @@ import {
 import { AddItemDialog } from "./AddItemDialog";
 import { useInvoice } from "./InvoiceProvider";
 import { formatCurrency } from "@/lib/utils";
+import { Button } from "./ui/button";
+import { useToast } from "./ui/use-toast";
 
 interface InvoiceItemsListProps {}
 
 const InvoiceItemsList: FC<InvoiceItemsListProps> = () => {
-  const { items } = useInvoice();
+  const { items, currency } = useInvoice();
+
+  const { toast } = useToast();
   return (
     <div className="py-2 space-y-2">
       {items.length !== 0 && (
@@ -43,10 +47,10 @@ const InvoiceItemsList: FC<InvoiceItemsListProps> = () => {
                   <TableCell className="font-medium">{item.name}</TableCell>
                   <TableCell className="text-center">{item.quantity}</TableCell>
                   <TableCell className="text-center">
-                    {formatCurrency(+item.rate)}
+                    {formatCurrency(+item.rate, undefined, currency)}
                   </TableCell>
                   <TableCell className="text-center">
-                    {formatCurrency(item.total_amt ?? 0)}
+                    {formatCurrency(item.total_amt ?? 0, undefined, currency)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -55,7 +59,21 @@ const InvoiceItemsList: FC<InvoiceItemsListProps> = () => {
         </div>
       )}
       <div className="print:hidden">
-        <AddItemDialog />
+        {items.length < 5 ? (
+          <AddItemDialog />
+        ) : (
+          <Button
+            onClick={() => {
+              toast({
+                description: "You can't able to add more than 5 items.",
+                className: "border-2",
+              });
+            }}
+            variant="secondary"
+          >
+            Add more Items
+          </Button>
+        )}
       </div>
     </div>
   );

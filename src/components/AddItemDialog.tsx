@@ -23,6 +23,7 @@ export function AddItemDialog() {
   const {
     setItem: { add },
   } = useInvoice();
+
   const [err, setErr] = useState("");
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -32,8 +33,8 @@ export function AddItemDialog() {
   };
 
   const onSubmit = () => {
-    // return;
     const { name, quantity, rate } = item;
+
     if (name.length === 0 || quantity === "" || rate === "") setErr("Error");
     else {
       item.total_amt = +quantity * +rate;
@@ -95,7 +96,7 @@ export function AddItemDialog() {
         </div>
         <p className="text-red-500 block text-center">{err}</p>
         <DialogFooter>
-          <Button onClick={() => onSubmit()}>Add</Button>
+          <Button onClick={onSubmit}>Add</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

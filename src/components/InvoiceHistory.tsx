@@ -11,6 +11,7 @@ import { useInvoiceHistory } from "./InvoiceHistoryProvider";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { Plus } from "lucide-react";
+import CurrencySelection from "./CurrencySelection";
 
 interface InvoiceHistoryProps {}
 const InvoiceHistory: FC<InvoiceHistoryProps> = () => {
@@ -33,13 +34,17 @@ const InvoiceHistory: FC<InvoiceHistoryProps> = () => {
               {invoices.map((invoice, ind) => (
                 <TableRow key={ind} onClick={() => changeCurrentInvoice(ind)}>
                   <TableCell className="w-max">
-                    #{invoice.headerData.invoice_number}
+                    {invoice.headerData.format_invoice_number}
                   </TableCell>
                   <TableCell className="w-full">
                     {invoice.headerData.bill_to}
                   </TableCell>
                   <TableCell className="w-max text-center">
-                    {formatCurrency(invoice.amounts.due_amt)}
+                    {formatCurrency(
+                      invoice.amounts.due_amt,
+                      undefined,
+                      invoice.currency
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -51,7 +56,8 @@ const InvoiceHistory: FC<InvoiceHistoryProps> = () => {
           <p>Empty</p>
         </div>
       )}
-      <div className="mt-4">
+      <div className="mt-4 flex flex-row gap-3">
+        <CurrencySelection />
         <Button onClick={createNewInvoice}>
           <Plus /> New
         </Button>
